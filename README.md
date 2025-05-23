@@ -6,7 +6,7 @@ Libro is an app for listening audio material from
 [internet archive][archive] and,
 - most WebDAV servers hosting audiobooks and music albums including NextCloud.
 
-If you want to build a lightweight self-hosted WebDAV servers check biblio.
+If you want to build a light-weight self-hosted WebDAV servers check biblio.
 
 # Features
 
@@ -16,10 +16,10 @@ and to reduce the mobile data usage.
 
 # [Screenshots][screenshots]
 
-# ToDos
+# Todos
 
 * better download progress indicator
-* handle defaultThumbnailImage nicely 
+* refactor defaultThumbnailImage logic
 * when adding book download cover image too
 
 # Bugs
@@ -29,3 +29,22 @@ and to reduce the mobile data usage.
 [librivox]: https://librivox.org
 [archive]: https://archinve.org
 [screenshots]: screenshots
+
+# Notes
+
+* Due to AGP bugs in v8.6 and v8.7, current AGP version is set to v8.5.2 
+```
+plugins {
+    ...
+    id("com.android.application") version "8.5.2" apply false
+    ...
+}
+```
+in `settings.gradle.kts`.
+See [discussions in this issue](https://github.com/ryanheise/just_audio/issues/1468).
+
+* Due to the regression in Flutter tooling, NDK verion is set to 
+```
+ndkVersion = "27.0.12077973"
+```
+in `app/build.gradle.kts`.
