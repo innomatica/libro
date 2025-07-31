@@ -11,8 +11,8 @@ import '../ui/home/model.dart';
 import '../ui/home/view.dart';
 import '../ui/resource/model.dart';
 import '../ui/resource/view.dart';
-import '../ui/dav_server/model.dart';
-import '../ui/dav_server/view.dart';
+import '../ui/dav_settings/model.dart';
+import '../ui/dav_settings/view.dart';
 // import './routes.dart';
 
 final logger = Logger('Routing');
@@ -44,10 +44,10 @@ final router = GoRouter(
         GoRoute(
           path: "dav_server",
           builder: (context, state) {
-            final model = context.read<DavServerViewModel>();
+            final model = context.read<DavSettingsViewModel>();
             final params = state.uri.queryParameters;
             final serverId = int.tryParse(params["serverId"] ?? '');
-            return DavServerView(model: model..load(serverId));
+            return DavSettingsView(model: model..load(serverId));
           },
         ),
         // resource

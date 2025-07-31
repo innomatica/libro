@@ -8,9 +8,9 @@ import 'package:logging/logging.dart';
 import '../../model/webdav.dart';
 import 'model.dart';
 
-class DavServerView extends StatelessWidget {
-  const DavServerView({super.key, required this.model});
-  final DavServerViewModel model;
+class DavSettingsView extends StatelessWidget {
+  const DavSettingsView({super.key, required this.model});
+  final DavSettingsViewModel model;
 
   @override
   Widget build(BuildContext context) {
@@ -25,18 +25,14 @@ class DavServerView extends StatelessWidget {
       body: ListenableBuilder(
         // listenable: model.load,
         listenable: model,
-        builder:
-            (context, _) =>
-                model.loading
-                    // builder: (context, _) => model.load.running
-                    ? Center(child: CircularProgressIndicator())
-                    : model.error != ""
-                    // : model.load.error
-                    ? Center(child: Text(model.error))
-                    // ? Center(child: Text(model.load.error.toString()))
-                    : SingleChildScrollView(
-                      child: ServerSettings(model: model),
-                    ),
+        builder: (context, _) => model.loading
+            // builder: (context, _) => model.load.running
+            ? Center(child: CircularProgressIndicator())
+            : model.error != ""
+            // : model.load.error
+            ? Center(child: Text(model.error))
+            // ? Center(child: Text(model.load.error.toString()))
+            : SingleChildScrollView(child: ServerSettings(model: model)),
       ),
     );
   }
@@ -44,7 +40,7 @@ class DavServerView extends StatelessWidget {
 
 class ServerSettings extends StatefulWidget {
   const ServerSettings({super.key, required this.model});
-  final DavServerViewModel model;
+  final DavSettingsViewModel model;
 
   @override
   State<ServerSettings> createState() => _ServerSettingsState();
@@ -107,24 +103,20 @@ class _ServerSettingsState extends State<ServerSettings> {
     // final auth = widget.model.server.auth;
     if (server.auth.method == AuthMethod.basic) {
       // basic auth
-      server.auth.username =
-          _usernameController.text.trim().isEmpty
-              ? null
-              : _usernameController.text.trim();
-      server.auth.password =
-          _passwordController.text.trim().isEmpty
-              ? null
-              : _passwordController.text.trim();
+      server.auth.username = _usernameController.text.trim().isEmpty
+          ? null
+          : _usernameController.text.trim();
+      server.auth.password = _passwordController.text.trim().isEmpty
+          ? null
+          : _passwordController.text.trim();
     } else if (server.auth.method == AuthMethod.nubis) {
       // nubis
-      server.auth.username =
-          _usernameController.text.trim().isEmpty
-              ? null
-              : _usernameController.text.trim();
-      server.auth.password =
-          _passwordController.text.trim().isEmpty
-              ? null
-              : _passwordController.text.trim();
+      server.auth.username = _usernameController.text.trim().isEmpty
+          ? null
+          : _usernameController.text.trim();
+      server.auth.password = _passwordController.text.trim().isEmpty
+          ? null
+          : _passwordController.text.trim();
       server.auth.authUrl = _authUrlController.text.trim();
       if (!server.auth.authUrl!.startsWith('https://')) {
         server.auth.authUrl = 'https://${server.auth.authUrl}';
@@ -170,18 +162,18 @@ class _ServerSettingsState extends State<ServerSettings> {
 
   String? _passwordValidator(String? value) =>
       value is String && value.trim().length >= 8
-          ? null
-          : "at least 8 characters required";
+      ? null
+      : "at least 8 characters required";
 
   String? _usernameValidator(String? value) =>
       value is String && value.trim().length >= 5
-          ? null
-          : "at least 5 characters required";
+      ? null
+      : "at least 5 characters required";
 
   String? _urlValidator(String? value) =>
       value is String && value.trim().length >= 5 && value.contains('.')
-          ? null
-          : "invalid url";
+      ? null
+      : "invalid url";
 
   @override
   Widget build(BuildContext context) {
@@ -241,21 +233,18 @@ class _ServerSettingsState extends State<ServerSettings> {
                 DropdownButton(
                   // isExpanded: true,
                   value: widget.model.server.auth.method.name,
-                  onChanged:
-                      (value) => setState(
-                        () =>
-                            widget.model.server.auth.method = AuthMethod.values
-                                .byName(value!),
-                      ),
-                  items:
-                      AuthMethod.values
-                          .map(
-                            (a) => DropdownMenuItem(
-                              value: a.name,
-                              child: Text(a.name),
-                            ),
-                          )
-                          .toList(),
+                  onChanged: (value) => setState(
+                    () => widget.model.server.auth.method = AuthMethod.values
+                        .byName(value!),
+                  ),
+                  items: AuthMethod.values
+                      .map(
+                        (a) => DropdownMenuItem(
+                          value: a.name,
+                          child: Text(a.name),
+                        ),
+                      )
+                      .toList(),
                 ),
               ],
             ),
@@ -263,147 +252,143 @@ class _ServerSettingsState extends State<ServerSettings> {
                 ? SizedBox() // no auth
                 : widget.model.server.auth.method == AuthMethod.nubis
                 ? Column(
-                  // authelia with PAR
-                  spacing: 16,
-                  children: [
-                    TextFormField(
-                      controller: _authUrlController,
-                      validator: _urlValidator,
-                      decoration: InputDecoration(
-                        labelText: 'auth server',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    // client id
-                    TextFormField(
-                      controller: _usernameController,
-                      validator: _usernameValidator,
-                      decoration: InputDecoration(
-                        labelText: 'client ID',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    // client secret
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      validator: _passwordValidator,
-                      decoration: InputDecoration(
-                        labelText: 'client secret',
-                        border: OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon:
-                              _obscurePassword
-                                  ? Icon(Icons.visibility)
-                                  : Icon(Icons.visibility_off_outlined),
-                          onPressed:
-                              () => setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              ),
+                    // authelia with PAR
+                    spacing: 16,
+                    children: [
+                      TextFormField(
+                        controller: _authUrlController,
+                        validator: _urlValidator,
+                        decoration: InputDecoration(
+                          labelText: 'auth server',
+                          border: OutlineInputBorder(),
                         ),
                       ),
-                    ),
-                    // clear token
-                    widget.model.server.auth.accessToken != null
-                        ? TextButton(
-                          child: Text("delete token"),
-                          onPressed: () async {
-                            await widget.model.deleteTokens();
-                            setState(() {});
-                          },
-                        )
-                        : SizedBox(),
-                  ],
-                )
+                      // client id
+                      TextFormField(
+                        controller: _usernameController,
+                        validator: _usernameValidator,
+                        decoration: InputDecoration(
+                          labelText: 'client ID',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      // client secret
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        validator: _passwordValidator,
+                        decoration: InputDecoration(
+                          labelText: 'client secret',
+                          border: OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: _obscurePassword
+                                ? Icon(Icons.visibility)
+                                : Icon(Icons.visibility_off_outlined),
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // clear token
+                      widget.model.server.auth.accessToken != null
+                          ? TextButton(
+                              child: Text("delete token"),
+                              onPressed: () async {
+                                await widget.model.deleteTokens();
+                                setState(() {});
+                              },
+                            )
+                          : SizedBox(),
+                    ],
+                  )
                 : Column(
-                  // basic auth
-                  spacing: 16,
-                  children: [
-                    // username
-                    TextFormField(
-                      controller: _usernameController,
-                      validator: _usernameValidator,
-                      decoration: InputDecoration(
-                        labelText: 'username',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    // password
-                    TextFormField(
-                      controller: _passwordController,
-                      validator: _passwordValidator,
-                      obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        labelText: 'password',
-                        border: OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon:
-                              _obscurePassword
-                                  ? Icon(Icons.visibility)
-                                  : Icon(Icons.visibility_off_outlined),
-                          onPressed:
-                              () => setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              ),
+                    // basic auth
+                    spacing: 16,
+                    children: [
+                      // username
+                      TextFormField(
+                        controller: _usernameController,
+                        validator: _usernameValidator,
+                        decoration: InputDecoration(
+                          labelText: 'username',
+                          border: OutlineInputBorder(),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                      // password
+                      TextFormField(
+                        controller: _passwordController,
+                        validator: _passwordValidator,
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
+                          labelText: 'password',
+                          border: OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: _obscurePassword
+                                ? Icon(Icons.visibility)
+                                : Icon(Icons.visibility_off_outlined),
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
             widget.model.server.id != null
                 ? Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  spacing: 16.0,
-                  children: [
-                    FilledButton(
-                      child: Text('Update'),
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          final res = await _update();
-                          if (context.mounted) {
-                            FocusScope.of(context).unfocus();
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(SnackBar(content: Text(res)));
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 16.0,
+                    children: [
+                      FilledButton(
+                        child: Text('Update'),
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            final res = await _update();
+                            if (context.mounted) {
+                              FocusScope.of(context).unfocus();
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(SnackBar(content: Text(res)));
+                            }
                           }
-                        }
-                      },
-                    ),
-                    FilledButton.tonal(
-                      child: Text('Delete', style: errorStyle),
-                      onPressed: () async {
-                        await widget.model.deleteServer();
-                        if (context.mounted) {
-                          context.pop();
-                        }
-                      },
-                    ),
-                  ],
-                )
+                        },
+                      ),
+                      FilledButton.tonal(
+                        child: Text('Delete', style: errorStyle),
+                        onPressed: () async {
+                          await widget.model.deleteServer();
+                          if (context.mounted) {
+                            context.pop();
+                          }
+                        },
+                      ),
+                    ],
+                  )
                 : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  spacing: 16.0,
-                  children: [
-                    FilledButton(
-                      child: Text('Create'),
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          final res = await _update();
-                          if (context.mounted) {
-                            FocusScope.of(context).unfocus();
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(SnackBar(content: Text(res)));
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 16.0,
+                    children: [
+                      FilledButton(
+                        child: Text('Create'),
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            final res = await _update();
+                            if (context.mounted) {
+                              FocusScope.of(context).unfocus();
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(SnackBar(content: Text(res)));
+                            }
                           }
-                        }
-                      },
-                    ),
-                    FilledButton.tonal(
-                      child: Text('Cancel', style: errorStyle),
-                      onPressed: () => context.pop(),
-                    ),
-                  ],
-                ),
+                        },
+                      ),
+                      FilledButton.tonal(
+                        child: Text('Cancel', style: errorStyle),
+                        onPressed: () => context.pop(),
+                      ),
+                    ],
+                  ),
           ],
         ),
       ),

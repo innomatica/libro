@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
@@ -14,7 +16,7 @@ class LibroItem {
 
 class HomeViewModel extends ChangeNotifier {
   HomeViewModel({required ResourceRepository resourceRepo})
-      : _resourceRepo = resourceRepo {
+    : _resourceRepo = resourceRepo {
     //
   }
 
@@ -26,16 +28,25 @@ class HomeViewModel extends ChangeNotifier {
   final List<LibroItem> _items = [];
   bool _running = true;
   String _error = "";
+  String? _selectedResourceId;
+  StreamSubscription? _subPlaying;
 
   List<LibroItem> get items => _items;
   List<WebDavServer> get servers => _servers;
   bool get running => _running;
   String get error => _error;
-  String? get selectedResourceId => _resourceRepo.currentResourceId;
+  // String? get selectedResourceId => _resourceRepo.currentResourceId;
+  String? get selectedResourceId => _selectedResourceId;
 
   Future<ImageProvider> getThumbnailImage(String resourceId) async =>
       await _resourceRepo.getThumbnailImage(resourceId) ??
       defaultThumbnailImage;
+
+  @override
+  void dispose() {
+    _subPlaying?.cancel();
+    super.dispose();
+  }
 
   Future<void> load() async {
     // _logger.fine('_load');
@@ -44,24 +55,40 @@ class HomeViewModel extends ChangeNotifier {
       final resources = await _resourceRepo.getResources();
       _items.clear();
       for (final resource in resources) {
-        _items.add(LibroItem(
-          res: resource,
-          img: await _resourceRepo.getThumbnailImage(resource.resourceId) ??
-              defaultThumbnailImage,
-        ));
+        _items.add(
+          LibroItem(
+            res: resource,
+            img:
+                await _resourceRepo.getThumbnailImage(resource.resourceId) ??
+                defaultThumbnailImage,
+          ),
+        );
       }
       // _logger.fine('items:$_items');
       _servers.clear();
       _servers.addAll(await _resourceRepo.getServers());
       // _logger.fine('servers:$_server');
-      // return Result.ok(null);
+
+      _subPlaying = _resourceRepo.player.playingStream.listen((event) {
+        if (event) {
+          // update selected resource id whenver the player
+          // was started or stopped
+          _selectedResourceId = _resourceRepo.currentResourceId;
+          _logger.fine('event:$event - $_selectedResourceId');
+          notifyListeners();
+        }
+      });
     } on Exception catch (e) {
       _logger.severe(e.toString());
-      // return Result.error(e);
       _error = e.toString();
     } finally {
       _running = false;
       notifyListeners();
     }
+  }
+
+  Future play(String resourceId) async {
+    await _resourceRepo.playAudio(resourceId);
+    // notifyListeners();
   }
 }

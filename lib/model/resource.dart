@@ -111,24 +111,20 @@ class Resource {
       description: row['description'] as String?,
       thumbnail: row['thumbnail'] as String?,
       keywords: row['keywords'] as String?,
-      items:
-          jsonDecode(
-            row['items'] as String,
-          ).map<ResourceItem>((e) => ResourceItem.fromMap(e)).toList(),
-      mediaTypes:
-          jsonDecode(
-            row['media_types'] as String,
-          ).map<ContentType>((e) => ContentType.parse(e)).toList(),
-      bookmark:
-          row['bookmark'] != null
-              ? Bookmark.fromMap(jsonDecode(row['bookmark'] as String))
-              : null,
+      items: jsonDecode(
+        row['items'] as String,
+      ).map<ResourceItem>((e) => ResourceItem.fromMap(e)).toList(),
+      mediaTypes: jsonDecode(
+        row['media_types'] as String,
+      ).map<ContentType>((e) => ContentType.parse(e)).toList(),
+      bookmark: row['bookmark'] != null
+          ? Bookmark.fromMap(jsonDecode(row['bookmark'] as String))
+          : null,
       serverId: row['server_id'] != null ? row['server_id'] as int : null,
       extra: row['extra'] != null ? jsonDecode(row['extra'] as String) : null,
-      auth:
-          row['auth'] != null
-              ? WebDavAuth.fromMap(jsonDecode(row['auth'] as String))
-              : null,
+      auth: row['auth'] != null
+          ? WebDavAuth.fromMap(jsonDecode(row['auth'] as String))
+          : null,
     );
   }
 

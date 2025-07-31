@@ -78,16 +78,21 @@ class OAuthService {
     final scope = auth.scope;
     final audience = auth.audience;
     if ([authEp, parEp, redirectUri, scope, audience].any((e) => e == null)) {
-      throw OAuthException(OAuthExCause.parreq,
-          details: "invalid parameters: authEp:$authEp,parEp:$parEp"
-              "redirectUri:$redirectUri, scope:$scope, audience:$audience");
+      throw OAuthException(
+        OAuthExCause.parreq,
+        details:
+            "invalid parameters: authEp:$authEp,parEp:$parEp"
+            "redirectUri:$redirectUri, scope:$scope, audience:$audience",
+      );
     }
     // check credential
     final clientId = auth.username;
     final clientSecret = auth.password;
     if (clientId == null || clientSecret == null) {
-      throw OAuthException(OAuthExCause.parreq,
-          details: "invalid credentials: id:$clientId, secret:$clientSecret");
+      throw OAuthException(
+        OAuthExCause.parreq,
+        details: "invalid credentials: id:$clientId, secret:$clientSecret",
+      );
     }
     // create credentials and nonce
     final credentials = base64Encode(utf8.encode('$clientId:$clientSecret'));
@@ -127,10 +132,16 @@ class OAuthService {
       // final lifetime = jsonDecode(res.body)['expires_in'];
       final requestUri = jsonDecode(parReqResp.body)['request_uri'];
       return PushedAuthResponse(
-          pkce: pkce, nonce: nonce, requestUri: requestUri);
+        pkce: pkce,
+        nonce: nonce,
+        requestUri: requestUri,
+      );
     } else {
-      throw OAuthException(OAuthExCause.parres,
-          statusCode: parReqResp.statusCode, details: parReqResp.body);
+      throw OAuthException(
+        OAuthExCause.parres,
+        statusCode: parReqResp.statusCode,
+        details: parReqResp.body,
+      );
     }
   }
 
@@ -144,16 +155,21 @@ class OAuthService {
     final redirectUri = auth.redirectUri;
     final audience = auth.audience;
     if ([tokenEp, redirectUri, audience].any((e) => e == null)) {
-      throw OAuthException(OAuthExCause.excreq,
-          details: "invalid parameters:tokenEp:$tokenEp,"
-              "redirectUri:$redirectUri, audience:$audience");
+      throw OAuthException(
+        OAuthExCause.excreq,
+        details:
+            "invalid parameters:tokenEp:$tokenEp,"
+            "redirectUri:$redirectUri, audience:$audience",
+      );
     }
     // check credential
     final clientId = auth.username;
     final clientSecret = auth.password;
     if (clientId == null || clientSecret == null) {
-      throw OAuthException(OAuthExCause.excreq,
-          details: "invalid credentials: id:$clientId, secret:$clientSecret");
+      throw OAuthException(
+        OAuthExCause.excreq,
+        details: "invalid credentials: id:$clientId, secret:$clientSecret",
+      );
     }
     // create credentials and nonce
     final credentials = base64Encode(utf8.encode('$clientId:$clientSecret'));
@@ -197,8 +213,11 @@ class OAuthService {
         scope: tokenData["scope"],
       );
     } else {
-      throw OAuthException(OAuthExCause.excres,
-          statusCode: tokenExcRes.statusCode, details: tokenExcRes.body);
+      throw OAuthException(
+        OAuthExCause.excres,
+        statusCode: tokenExcRes.statusCode,
+        details: tokenExcRes.body,
+      );
     }
   }
 
@@ -207,18 +226,25 @@ class OAuthService {
     if (auth.extra?['tokenEp'] == null ||
         auth.refreshToken == null ||
         auth.expiresAt == null) {
-      _logger.warning('necessary auth parameters (tokenEp, refreshToken or '
-          'expiresAt) missing:$auth');
-      throw OAuthException(OAuthExCause.refreq,
-          details: "invalid paramters: tokenEp:${auth.extra?['tokenEp']}, "
-              "refreshToken:${auth.refreshToken}, expiresAt:${auth.expiresAt}");
+      _logger.warning(
+        'necessary auth parameters (tokenEp, refreshToken or '
+        'expiresAt) missing:$auth',
+      );
+      throw OAuthException(
+        OAuthExCause.refreq,
+        details:
+            "invalid paramters: tokenEp:${auth.extra?['tokenEp']}, "
+            "refreshToken:${auth.refreshToken}, expiresAt:${auth.expiresAt}",
+      );
     }
     // check credentials
     final clientId = auth.username;
     final clientSecret = auth.password;
     if (clientId == null || clientSecret == null) {
-      throw OAuthException(OAuthExCause.refreq,
-          details: "invalid credentials: id:$clientId, secret:$clientSecret");
+      throw OAuthException(
+        OAuthExCause.refreq,
+        details: "invalid credentials: id:$clientId, secret:$clientSecret",
+      );
     }
     //
     // Refresh Token
@@ -243,7 +269,8 @@ class OAuthService {
     //   "tokey_type": "bearer"
     // }
     _logger.fine(
-        'refresh response:${tokenRefRes.statusCode} -${tokenRefRes.body}');
+      'refresh response:${tokenRefRes.statusCode} -${tokenRefRes.body}',
+    );
     if (tokenRefRes.statusCode == 200) {
       final tokenData = (jsonDecode(tokenRefRes.body) as Map);
       // update token data
@@ -252,7 +279,6 @@ class OAuthService {
       // auth.expiresAt = tokenData["expires_in"] +
       //     DateTime.now().millisecondsSinceEpoch ~/ 1000;
       // _logger.fine('updated: $auth');
-      // return Result.ok(auth);
       return RefreshTokenResponse(
         accessToken: tokenData["access_token"],
         tokenType: tokenData["token_type"],
@@ -261,16 +287,17 @@ class OAuthService {
         scope: tokenData["scope"],
       );
     } else {
-      throw OAuthException(OAuthExCause.refres,
-          statusCode: tokenRefRes.statusCode, details: tokenRefRes.body);
+      throw OAuthException(
+        OAuthExCause.refres,
+        statusCode: tokenRefRes.statusCode,
+        details: tokenRefRes.body,
+      );
     }
   }
 
   String _getRandomString([int size = 16]) {
     return base64Url
-        .encode(
-          List<int>.generate(size, (_) => Random.secure().nextInt(256)),
-        )
+        .encode(List<int>.generate(size, (_) => Random.secure().nextInt(256)))
         .replaceAll("=", "");
   }
 }

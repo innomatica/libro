@@ -71,9 +71,11 @@ class WebDavClient {
     }
     // accept only with status codes 200 and 207
     if (res.statusCode != 200 && res.statusCode != 207) {
-      // return Result.error(Exception(body));
-      throw WebDavClientException(WebDavExCause.http,
-          statusCode: res.statusCode, details: res.toString());
+      throw WebDavClientException(
+        WebDavExCause.http,
+        statusCode: res.statusCode,
+        details: res.toString(),
+      );
     }
 
     // decode XML
@@ -135,8 +137,10 @@ class WebDavClient {
                       displayName = subSubItem.innerText.replaceAll('"', '');
                       break;
                     case 'getcontentlanguage':
-                      contentLanguage =
-                          subSubItem.innerText.replaceAll('"', '');
+                      contentLanguage = subSubItem.innerText.replaceAll(
+                        '"',
+                        '',
+                      );
                       break;
                     case 'getcontentlength':
                       contentLength = int.tryParse(subSubItem.innerText);
@@ -145,7 +149,9 @@ class WebDavClient {
                       final ctype = subSubItem.innerText;
                       contentType = ctype.contains('/')
                           ? ContentType(
-                              ctype.split('/')[0], ctype.split('/')[1])
+                              ctype.split('/')[0],
+                              ctype.split('/')[1],
+                            )
                           : null;
                       break;
                     case 'getetag':
@@ -252,7 +258,8 @@ class WebDavClient {
   static String _getRequestXml(String method) {
     String xml = '<?xml version="1.0" encoding="UTF-8"?>';
     if (method == 'PROPFIND') {
-      xml = '$xml '
+      xml =
+          '$xml '
           '<d:propfind xmlns:d="DAV:"'
           '   xmlns:oc="http://owncloud.org/ns"'
           '   xmlns:nc="http://nextcloud.org/ns">'

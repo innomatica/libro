@@ -15,28 +15,14 @@ class ResourceViewModel extends ChangeNotifier {
     required ResourceRepository resourceRepo,
     required ResourceDownloader resourceDnr,
   }) : _resourceRepo = resourceRepo,
-       _resourceDnr = resourceDnr {
-    // subscribe to the currentIndex
-    _resourceRepo.player.currentIndexStream.listen((event) async {
-      // change of currentIndex => update currentItemIndex
-      await _updateCurrentItemIndex();
-    });
-    // subscribe to the playing / pause stream
-    _resourceRepo.player.playingStream.listen((event) async {
-      if (event) {
-        // playing => update currentItemIndex
-        await _updateCurrentItemIndex();
-      } else {
-        // paused => update bookmarkItemIndex
-        await _updateBookmarkItemIndex();
-      }
-    });
-  }
+       _resourceDnr = resourceDnr;
+
   final ResourceRepository _resourceRepo;
   final ResourceDownloader _resourceDnr;
   // ignore: unused_field
   final _logger = Logger('ResourceViewModel');
 
+  StreamSubscription? _subCurrIdx, _subPlaying;
   ImageProvider _image = defaultThumbnailImage;
   Resource? _resource;
   bool _running = true;
@@ -63,6 +49,7 @@ class ResourceViewModel extends ChangeNotifier {
     _running = true;
     try {
       if (resourceId != null) {
+        // read resource
         _resource = await _resourceRepo.readResource(resourceId);
         _logger.fine('resource: ${resource.toString()}');
         // initial bookmark item index
@@ -81,12 +68,37 @@ class ResourceViewModel extends ChangeNotifier {
         );
         _error = '';
       }
+
+      // subscribe to the currentIndex
+      _subCurrIdx = _resourceRepo.player.currentIndexStream.listen((
+        event,
+      ) async {
+        // change of currentIndex => update currentItemIndex
+        await _updateCurrentItemIndex();
+      });
+      // subscribe to the playing stream
+      _subPlaying = _resourceRepo.player.playingStream.listen((event) async {
+        if (event) {
+          // playing => update currentItemIndex
+          await _updateCurrentItemIndex();
+        } else {
+          // paused => update bookmarkItemIndex
+          await _updateBookmarkItemIndex();
+        }
+      });
     } on Exception catch (e) {
       _error = e.toString();
     } finally {
       _running = false;
       notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    _subCurrIdx?.cancel();
+    _subPlaying?.cancel();
+    super.dispose();
   }
 
   Future deleteResource() async {
@@ -121,7 +133,10 @@ class ResourceViewModel extends ChangeNotifier {
     try {
       if (_resource != null) {
         if (item.type?.primaryType == 'audio') {
-          await _resourceRepo.playAudio(_resource!.resourceId, item.index);
+          await _resourceRepo.playAudio(
+            _resource!.resourceId,
+            index: item.index,
+          );
         } else if (item.type?.primaryType == 'image') {}
         if (_resourceRepo.currentResourceId == _resource?.resourceId) {
           _currentItemIndex = _resourceRepo.currentItemIndex;

@@ -4,13 +4,13 @@ import 'package:logging/logging.dart';
 import '../../data/repositories/resource.dart';
 import '../../model/webdav.dart';
 
-class DavServerViewModel extends ChangeNotifier {
+class DavSettingsViewModel extends ChangeNotifier {
   final ResourceRepository _resourceRepo;
-  DavServerViewModel({required ResourceRepository resourceRepo})
+  DavSettingsViewModel({required ResourceRepository resourceRepo})
     : _resourceRepo = resourceRepo;
 
   // ignore: unused_field
-  final _logger = Logger('SettingsViewModel');
+  final _logger = Logger('DavSettingsViewModel');
 
   late WebDavServer _server;
   bool _loading = true;

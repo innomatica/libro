@@ -97,6 +97,125 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
+  Widget _buildRectTile(LibroItem item, bool selected) => Card(
+    elevation: 1.0,
+    color: selected ? Theme.of(context).colorScheme.tertiaryContainer : null,
+    child: ListTile(
+      contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
+      leading: ClipRRect(
+        borderRadius: BorderRadius.circular(4.0),
+        child: AspectRatio(
+          aspectRatio: 1.0,
+          child: Image(image: item.img, fit: BoxFit.cover),
+        ),
+      ),
+      title: Text(
+        item.res.title,
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        // textAlign: TextAlign.left,
+      ),
+      subtitle: Text(
+        item.res.author,
+        style: TextStyle(fontSize: 13),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      onTap: () => widget.model.play(item.res.resourceId),
+      onLongPress: () => context.go(
+        Uri(
+          path: "/resources",
+          queryParameters: {"resourceId": item.res.resourceId},
+        ).toString(),
+      ),
+    ),
+  );
+
+  Widget _buildGridTile(LibroItem item, bool selected) => GestureDetector(
+    onTap: () => widget.model.play(item.res.resourceId),
+    onLongPress: () => context.go(
+      Uri(
+        path: "/resource",
+        queryParameters: {"resourceId": item.res.resourceId},
+      ).toString(),
+    ),
+    child: Card(
+      elevation: selected ? 16 : 0,
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4.0),
+            clipBehavior: Clip.hardEdge,
+            child: AspectRatio(
+              aspectRatio: 0.9,
+              child: Image(
+                image: item.img,
+                width: 130,
+                // height: 130,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          Text(
+            item.res.title.split(' - ').first.trim(),
+            style: TextStyle(fontWeight: FontWeight.w300),
+            maxLines: 1,
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Widget _buildBody() => widget.model.running
+      ? Center(child: CircularProgressIndicator())
+      : widget.model.error != ""
+      ? Center(child: Text(widget.model.error))
+      : LayoutBuilder(
+          builder: (context, constraint) {
+            return widget.model.items.isNotEmpty
+                ? constraint.maxWidth <= 600
+                      ? ListView(
+                          padding: EdgeInsets.symmetric(horizontal: 8.0),
+                          children: widget.model.items
+                              .map(
+                                (item) => _buildRectTile(
+                                  item,
+                                  widget.model.selectedResourceId ==
+                                      item.res.resourceId,
+                                ),
+                              )
+                              .toList(),
+                        )
+                      : GridView.extent(
+                          maxCrossAxisExtent: 170,
+                          padding: const EdgeInsets.all(4),
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 4,
+                          childAspectRatio: 0.8,
+                          children: widget.model.items
+                              .map(
+                                (item) => _buildGridTile(
+                                  item,
+                                  widget.model.selectedResourceId ==
+                                      item.res.resourceId,
+                                ),
+                              )
+                              .toList(),
+                        )
+                : Center(
+                    child: Image.asset(
+                      bookImage,
+                      width: 200,
+                      height: 200,
+                      opacity: const AlwaysStoppedAnimation(0.5),
+                    ),
+                  );
+          },
+        );
+
   @override
   Widget build(BuildContext context) {
     // _logger.fine('running:${model.running}');
@@ -114,73 +233,19 @@ class _HomeViewState extends State<HomeView> {
                 stream: player.playingStream,
                 builder: (context, snapshot) {
                   return TextButton.icon(
-                    onPressed:
-                        snapshot.data == true ? () => setSleepTimer() : null,
+                    onPressed: snapshot.data == true
+                        ? () => setSleepTimer()
+                        : null,
                     icon: Icon(Icons.timelapse_rounded, size: 24),
-                    label:
-                        counter == 0
-                            ? SizedBox()
-                            : Text((counter ~/ 60 + 1).toString()),
+                    label: counter == 0
+                        ? SizedBox()
+                        : Text((counter ~/ 60 + 1).toString()),
                   );
                 },
               ),
             ],
           ),
-          body:
-              widget.model.running
-                  ? Center(child: CircularProgressIndicator())
-                  : widget.model.error != ""
-                  ? Center(child: Text(widget.model.error))
-                  : LayoutBuilder(
-                    builder: (context, constraint) {
-                      return widget.model.items.isNotEmpty
-                          ? constraint.maxWidth <= 600
-                              ? ListView(
-                                padding: EdgeInsets.symmetric(horizontal: 8.0),
-                                children:
-                                    widget.model.items
-                                        .map(
-                                          (item) => RectTile(
-                                            item: item,
-                                            selected:
-                                                widget
-                                                    .model
-                                                    .selectedResourceId ==
-                                                item.res.resourceId,
-                                          ),
-                                        )
-                                        .toList(),
-                              )
-                              : GridView.extent(
-                                maxCrossAxisExtent: 170,
-                                padding: const EdgeInsets.all(4),
-                                mainAxisSpacing: 8,
-                                crossAxisSpacing: 4,
-                                childAspectRatio: 0.8,
-                                children:
-                                    widget.model.items
-                                        .map(
-                                          (item) => GridTile(
-                                            item: item,
-                                            selected:
-                                                widget
-                                                    .model
-                                                    .selectedResourceId ==
-                                                item.res.resourceId,
-                                          ),
-                                        )
-                                        .toList(),
-                              )
-                          : Center(
-                            child: Image.asset(
-                              bookImage,
-                              width: 200,
-                              height: 200,
-                              opacity: const AlwaysStoppedAnimation(0.5),
-                            ),
-                          );
-                    },
-                  ),
+          body: _buildBody(),
           floatingActionButton: Opacity(
             opacity: 0.7,
             child: CustomActionButton(servers: widget.model.servers),
@@ -196,65 +261,20 @@ class _HomeViewState extends State<HomeView> {
   }
 }
 
-class RectTile extends StatelessWidget {
-  const RectTile({super.key, required this.item, required this.selected});
-  final LibroItem item;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 1.0,
-      color: selected ? Theme.of(context).colorScheme.tertiaryContainer : null,
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(4.0),
-          child: AspectRatio(
-            aspectRatio: 1.0,
-            child: Image(image: item.img, fit: BoxFit.cover),
-          ),
-        ),
-        title: Text(
-          item.res.title,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          // textAlign: TextAlign.left,
-        ),
-        subtitle: Text(
-          item.res.author,
-          style: TextStyle(fontSize: 13),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        onTap:
-            () => context.go(
-              Uri(
-                path: "/resources",
-                queryParameters: {"resourceId": item.res.resourceId},
-              ).toString(),
-            ),
-      ),
-    );
-  }
-}
-
 class GridTile extends StatelessWidget {
-  const GridTile({super.key, required this.item, required this.selected});
   final LibroItem item;
   final bool selected;
+  const GridTile({super.key, required this.item, required this.selected});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap:
-          () => context.go(
-            Uri(
-              path: "/resource",
-              queryParameters: {"resourceId": item.res.resourceId},
-            ).toString(),
-          ),
+      onLongPress: () => context.go(
+        Uri(
+          path: "/resource",
+          queryParameters: {"resourceId": item.res.resourceId},
+        ).toString(),
+      ),
       child: Card(
         elevation: selected ? 16 : 0,
         child: Column(
@@ -279,15 +299,6 @@ class GridTile extends StatelessWidget {
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
             ),
-            // item.res.title.split(' - ').length > 1
-            //     ? Text(
-            //         item.res.title.split(' - ').last.trim(),
-            //         style: TextStyle(fontSize: 12),
-            //         maxLines: 1,
-            //         overflow: TextOverflow.ellipsis,
-            //         // textAlign: TextAlign.left,
-            //       )
-            //     : SizedBox(),
           ],
         ),
       ),
@@ -319,13 +330,12 @@ class _CustomActionButtonState extends State<CustomActionButton> {
       menuChildren: [
         // librivox
         MenuItemButton(
-          onPressed:
-              () => context.go(
-                Uri(
-                  path: "/web_browser",
-                  queryParameters: {'url': librivoxUrl},
-                ).toString(),
-              ),
+          onPressed: () => context.go(
+            Uri(
+              path: "/web_browser",
+              queryParameters: {'url': librivoxUrl},
+            ).toString(),
+          ),
           child: Row(
             spacing: 8,
             children: [
@@ -339,13 +349,12 @@ class _CustomActionButtonState extends State<CustomActionButton> {
         ),
         // internet archive
         MenuItemButton(
-          onPressed:
-              () => context.go(
-                Uri(
-                  path: "/web_browser",
-                  queryParameters: {'url': archiveUrl},
-                ).toString(),
-              ),
+          onPressed: () => context.go(
+            Uri(
+              path: "/web_browser",
+              queryParameters: {'url': archiveUrl},
+            ).toString(),
+          ),
           child: Row(
             spacing: 8,
             children: [
@@ -359,13 +368,12 @@ class _CustomActionButtonState extends State<CustomActionButton> {
         ),
         ...widget.servers.map(
           (e) => MenuItemButton(
-            onPressed:
-                () => context.go(
-                  Uri(
-                    path: "/dav_browser",
-                    queryParameters: {'serverId': '${e.id}'},
-                  ).toString(),
-                ),
+            onPressed: () => context.go(
+              Uri(
+                path: "/dav_browser",
+                queryParameters: {'serverId': '${e.id}'},
+              ).toString(),
+            ),
             child: Row(
               spacing: 8,
               children: [
@@ -380,13 +388,12 @@ class _CustomActionButtonState extends State<CustomActionButton> {
         ),
         // new server
         MenuItemButton(
-          onPressed:
-              () => context.go(
-                Uri(
-                  path: "/dav_server",
-                  queryParameters: {'serverId': 'new'},
-                ).toString(),
-              ),
+          onPressed: () => context.go(
+            Uri(
+              path: "/dav_server",
+              queryParameters: {'serverId': 'new'},
+            ).toString(),
+          ),
           child: Row(
             spacing: 8,
             children: [
@@ -399,13 +406,11 @@ class _CustomActionButtonState extends State<CustomActionButton> {
           ),
         ),
       ],
-      builder:
-          (_, controller, child) => FloatingActionButton(
-            onPressed:
-                () =>
-                    controller.isOpen ? controller.close() : controller.open(),
-            child: Icon(Icons.add),
-          ),
+      builder: (_, controller, child) => FloatingActionButton(
+        onPressed: () =>
+            controller.isOpen ? controller.close() : controller.open(),
+        child: Icon(Icons.add),
+      ),
     );
   }
 }

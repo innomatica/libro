@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -43,14 +44,7 @@ class ResourceRepository {
        _dbs = dbs,
        _sts = sts,
        _client = client,
-       _oauth = oauth {
-    _player.playingStream.listen((event) async {
-      if (event == false) {
-        // paused => update bookmark
-        await _updateBookmark();
-      }
-    });
-  }
+       _oauth = oauth;
 
   final WebScraper _scraper;
   final AudioPlayer _player;
@@ -59,6 +53,7 @@ class ResourceRepository {
   final WebDavClient _client;
   final OAuthService _oauth;
 
+  StreamSubscription? _subPlaying;
   static const refreshLimit = 600;
   // ignore: unused_field
   final _logger = Logger('ResourceRepository');
@@ -68,14 +63,27 @@ class ResourceRepository {
   // Note currentItemIndex is the unique index of the resource item
   // which is different from the currentIndex of the player sequence.
   // currentItemIndex is stored in the extras field of the tag.
-  int? get currentItemIndex =>
-      _player.currentIndex != null
-          ? _player.sequence[_player.currentIndex!].tag.extras["index"]
-          : null;
-  String? get currentResourceId =>
-      _player.currentIndex != null
-          ? _player.sequence[_player.currentIndex!].tag.extras["resourceId"]
-          : null;
+  int? get currentItemIndex => _player.currentIndex != null
+      ? _player.sequence[_player.currentIndex!].tag.extras["index"]
+      : null;
+  String? get currentResourceId => _player.currentIndex != null
+      ? _player.sequence[_player.currentIndex!].tag.extras["resourceId"]
+      : null;
+
+  Future load() async {
+    // update bookmark when playing == false i.e., when
+    // the player was explicitly paused
+    _subPlaying = _player.playingStream.listen((event) async {
+      if (event == false) {
+        // paused => update bookmark
+        await _updateBookmark();
+      }
+    });
+  }
+
+  void dispose() {
+    _subPlaying?.cancel();
+  }
 
   Future<List<Resource>> getResources() async {
     try {
@@ -270,7 +278,9 @@ class ResourceRepository {
 
   Future<void> _updateBookmark() async {
     if (currentResourceId != null && currentItemIndex != null) {
-      _logger.fine('_updateBookmark: $currentItemIndex');
+      _logger.fine(
+        '_updateBookmark: $currentItemIndex, ${_player.position.inSeconds}',
+      );
       // update bookmark
       final bookmark = Bookmark(
         index: currentItemIndex!,
@@ -281,30 +291,36 @@ class ResourceRepository {
     }
   }
 
-  Future<void> playAudio(String resourceId, int index) async {
-    if (resourceId == currentResourceId && index == currentItemIndex) {
-      // if current item is selected => toggle play and pause
-      if (_player.playing) {
-        _logger.fine('pause');
-        // pauseAudio();
-        _player.pause();
+  Future<void> playAudio(String resourceId, {int? index}) async {
+    if (resourceId == currentResourceId) {
+      // same resource
+      if (index == currentItemIndex || index == null) {
+        if (_player.playing) {
+          _logger.fine('pause');
+          await _player.pause();
+        } else {
+          _logger.fine('resume');
+          await _player.play();
+        }
       } else {
-        _logger.fine('restart');
-        _player.play();
+        _logger.fine('seek');
+        await _player.seek(Duration(seconds: 0), index: index);
+        await _player.play();
       }
       return;
     } else {
-      // new item is selcted
+      // new resource
       _logger.fine('change source');
-      // pauseAudio();
-      _player.pause();
-      // read the new resource
+      // clear existing sequence
+      await _player.stop();
       try {
+        // read the new resource
         final resource = await readResource(resourceId);
         // FIXME: raise exception or something
         if (resource == null) return;
         // int initialIndex = 0;
         final sources = <IndexedAudioSource>[];
+
         // int sourceIdx = 0;
         // final headers = await _getAuthHeaders(
         //   resource.auth,
@@ -313,8 +329,6 @@ class ResourceRepository {
         // );
 
         for (final item in resource.items) {
-          // skip previous items
-          if (item.index < index) continue;
           if (item.uri.startsWith('file')) {
             // file source
             sources.add(
@@ -366,18 +380,19 @@ class ResourceRepository {
             if (resource.auth?.method == AuthMethod.nubis) break;
           }
         }
-        // apply bookmark if the item's bookmark was saved
-        _logger.fine('sources:$sources');
-        final pos =
-            resource.bookmark?.index == index
-                ? resource.bookmark?.position ?? 0
-                : 0;
+        // _logger.fine('sources:$sources');
+
+        // apply bookmark if index was not given
+        final idx = index ?? resource.bookmark?.index ?? 0;
+        final pos = idx == resource.bookmark?.index
+            ? resource.bookmark?.position ?? 0
+            : 0;
         await _player.setAudioSources(
           sources,
-          // initialIndex: initialIndex,
+          initialIndex: idx,
           initialPosition: Duration(seconds: pos),
         );
-        _player.play();
+        await _player.play();
         return;
       } on Exception catch (e) {
         _logger.severe('playAudio: $e');
@@ -548,19 +563,18 @@ class ResourceRepository {
           Uri(
             path: "/oauth_consent",
             queryParameters: {
-              'url':
-                  Uri.parse(authEp)
-                      .replace(
-                        queryParameters: {
-                          "response_type": "code",
-                          "client_id": clientId,
-                          "scope": scope,
-                          "audience": audience,
-                          "request_uri": par.requestUri,
-                          "state": par.nonce,
-                        },
-                      )
-                      .toString(),
+              'url': Uri.parse(authEp)
+                  .replace(
+                    queryParameters: {
+                      "response_type": "code",
+                      "client_id": clientId,
+                      "scope": scope,
+                      "audience": audience,
+                      "request_uri": par.requestUri,
+                      "state": par.nonce,
+                    },
+                  )
+                  .toString(),
               'redirectUri': redirectUri,
             },
           ).toString(),

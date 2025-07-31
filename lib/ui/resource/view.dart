@@ -22,25 +22,24 @@ class ResourceView extends StatelessWidget {
         if (model.downloader.resourceId == model.resource?.resourceId) {
           // downloader are handling current resource
           return IconButton(
-            onPressed:
-                model.dataLocal
-                    ? null
-                    : () {
-                      if (model.downloader.running) {
-                        // currently downloading
-                        model.downloader.cancel();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'download is going to be canceled soon',
-                            ),
+            onPressed: model.dataLocal
+                ? null
+                : () {
+                    if (model.downloader.running) {
+                      // currently downloading
+                      model.downloader.cancel();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'download is going to be canceled soon',
                           ),
-                        );
-                      } else {
-                        // currently not downloading => resume
-                        model.downloader.run(model.resource?.resourceId);
-                      }
-                    },
+                        ),
+                      );
+                    } else {
+                      // currently not downloading => resume
+                      model.downloader.run(model.resource?.resourceId);
+                    }
+                  },
             icon: Icon(
               model.downloader.running
                   ? Icons.file_download_off_rounded
@@ -50,10 +49,9 @@ class ResourceView extends StatelessWidget {
         } else {
           // downloader is not handling current resource or idle
           return IconButton(
-            onPressed:
-                model.downloader.running || model.dataLocal
-                    ? null
-                    : () => model.downloader.run(model.resource?.resourceId),
+            onPressed: model.downloader.running || model.dataLocal
+                ? null
+                : () => model.downloader.run(model.resource?.resourceId),
             icon: Icon(Icons.download),
           );
         }
@@ -67,82 +65,85 @@ class ResourceView extends StatelessWidget {
         ? Center(child: CircularProgressIndicator())
         : model.error.isEmpty
         ? SingleChildScrollView(
-          padding: EdgeInsets.all(8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            spacing: 8,
-            children: [
-              ListenableBuilder(
-                listenable: model.downloader,
-                builder:
-                    (context, _) =>
-                        model.downloader.running &&
-                                model.downloader.resourceId ==
-                                    model.resource?.resourceId
-                            ? LinearProgressIndicator(
+            padding: EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              spacing: 8,
+              children: [
+                ListenableBuilder(
+                  listenable: model.downloader,
+                  builder: (context, _) =>
+                      model.downloader.running &&
+                          model.downloader.resourceId ==
+                              model.resource?.resourceId
+                      ? Stack(
+                          children: [
+                            LinearProgressIndicator(
                               value: model.downloader.result,
-                            )
-                            : SizedBox(),
-              ),
-              Banner(
-                title: model.resource!.title.split('-').first,
-                subtitle:
-                    model.resource!.title.contains(' - ')
-                        ? model.resource!.title.split('-').last
-                        : null,
-                image: model.image,
-              ),
-              // description
-              model.resource!.description != null
-                  ? StatefulBuilder(
-                    builder: (context, setState) {
-                      return GestureDetector(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            model.resource!.description ?? '',
-                            maxLines: expandDescription ? 30 : 3,
-                            overflow: TextOverflow.fade,
-                          ),
-                        ),
-                        onTap:
-                            () => setState(
+                            ),
+                            Opacity(
+                              opacity: 0.3,
+                              child: LinearProgressIndicator(),
+                            ),
+                          ],
+                        )
+                      : SizedBox(),
+                ),
+                Banner(
+                  title: model.resource!.title.split('-').first,
+                  subtitle: model.resource!.title.contains(' - ')
+                      ? model.resource!.title.split('-').last
+                      : null,
+                  image: model.image,
+                ),
+                // description
+                model.resource!.description != null
+                    ? StatefulBuilder(
+                        builder: (context, setState) {
+                          return GestureDetector(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                model.resource!.description ?? '',
+                                maxLines: expandDescription ? 30 : 3,
+                                overflow: TextOverflow.fade,
+                              ),
+                            ),
+                            onTap: () => setState(
                               () => expandDescription = !expandDescription,
                             ),
-                      );
-                    },
-                  )
-                  : SizedBox(),
-              // items
-              ListenableBuilder(
-                listenable: model,
-                builder: (context, _) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children:
-                        model.resource!.items.map((e) {
-                          return ItemTile(
-                            item: e,
-                            callback: () => _playContent(e, context),
-                            playing: e.index == model.currentItemIndex,
-                            marked: e.index == model.bookmarkItemIndex,
                           );
-                        }).toList(),
-                  );
-                },
-              ),
-            ],
-          ),
-        )
+                        },
+                      )
+                    : SizedBox(),
+                // items
+                ListenableBuilder(
+                  listenable: model,
+                  builder: (context, _) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: model.resource!.items.map((e) {
+                        return ItemTile(
+                          item: e,
+                          callback: () => _playContent(e, context),
+                          playing: e.index == model.currentItemIndex,
+                          marked: e.index == model.bookmarkItemIndex,
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+              ],
+            ),
+          )
         : Center(
-          child:
-              model.error.contains('signin')
-                  ? FilledButton(
+            child: model.error.contains('signin')
+                ? FilledButton(
                     onPressed: () => model.restartOAuth(context),
                     child: Text('Authentication Required'),
                   )
-                  : Text(model.error),
-        );
+                : Text(model.error),
+          );
   }
 
   void _playContent(ResourceItem item, BuildContext context) async {
@@ -166,20 +167,20 @@ class ResourceView extends StatelessWidget {
       if (widget != null) {
         context.mounted
             ? showDialog(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  contentPadding: EdgeInsets.all(0),
-                  content: SizedBox(width: double.maxFinite, child: widget!),
-                );
-              },
-            )
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    contentPadding: EdgeInsets.all(0),
+                    content: SizedBox(width: double.maxFinite, child: widget!),
+                  );
+                },
+              )
             : null;
       } else {
         context.mounted
             ? ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('unsupported media type: ${item.type}')),
-            )
+                SnackBar(content: Text('unsupported media type: ${item.type}')),
+              )
             : null;
       }
     }
@@ -236,11 +237,11 @@ class ResourceView extends StatelessWidget {
                 }
                 return model.downloader.error.isNotEmpty
                     ? Text(
-                      model.downloader.error,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    )
+                        model.downloader.error,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      )
                     : SizedBox();
               } else {
                 return SizedBox();
@@ -356,12 +357,11 @@ class OutlinedText extends StatelessWidget {
           style: TextStyle(
             fontSize: fontSize,
             fontWeight: fontWeight,
-            foreground:
-                Paint()
-                  ..style = PaintingStyle.stroke
-                  ..strokeWidth = 3
-                  // ..color = Colors.grey[500]!,
-                  ..color = Theme.of(context).colorScheme.outline,
+            foreground: Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 3
+              // ..color = Colors.grey[500]!,
+              ..color = Theme.of(context).colorScheme.outline,
           ),
         ),
         // Solid text as fill.
