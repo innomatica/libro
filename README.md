@@ -1,16 +1,50 @@
-# libro
+# Libro
 
-A new Flutter project.
+Libro is an app for listening audio materials from
 
-## Getting Started
+- public domain audiobook sites such as [librivox][librivox] and 
+[internet archive][archive] and,
+- most WebDAV servers hosting audiobooks and music albums including NextCloud.
 
-This project is a starting point for a Flutter application.
+If you want to build a light-weight self-hosted WebDAV servers check biblio.
 
-A few resources to get you started if this is your first Flutter project:
+# Features
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- Automatically fetches metadata from [librivox][librivox] and [internet archive][archive].
+- You can download materials locally to get better streaming experience 
+and to reduce the mobile data usage.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+# [Screenshots][screenshots]
+
+# Todos
+
+* better download progress indicator
+* refactor defaultThumbnailImage logic
+* when adding book download cover image too
+
+# Bugs
+
+* in DAV Browser, the first trial of adding items fails sometimes then works thereafter.
+
+[librivox]: https://librivox.org
+[archive]: https://archinve.org
+[screenshots]: screenshots
+
+# Notes
+
+* Due to AGP bugs in v8.6 and v8.7, current AGP version is set to v8.5.2 
+```
+plugins {
+    ...
+    id("com.android.application") version "8.5.2" apply false
+    ...
+}
+```
+in `settings.gradle.kts`.
+See [discussions in this issue](https://github.com/ryanheise/just_audio/issues/1468).
+
+* Due to the regression in Flutter tooling, NDK verion is set to 
+```
+ndkVersion = "27.0.12077973"
+```
+in `app/build.gradle.kts`.
