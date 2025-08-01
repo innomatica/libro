@@ -24,7 +24,8 @@ and to reduce the mobile data usage.
 
 # Bugs
 
-* in DAV Browser, the first trial of adding items fails sometimes then works thereafter.
+* In DAV Browser, the first trial of adding items fails sometimes then works thereafter.
+* Current version of just audio has a serious [issue needs to be resolved.](https://github.com/ryanheise/just_audio/issues/1506)
 
 [librivox]: https://librivox.org
 [archive]: https://archinve.org
