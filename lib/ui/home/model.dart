@@ -17,7 +17,7 @@ class LibroItem {
 class HomeViewModel extends ChangeNotifier {
   HomeViewModel({required ResourceRepository resourceRepo})
     : _resourceRepo = resourceRepo {
-    //
+    _init();
   }
 
   final ResourceRepository _resourceRepo;
@@ -48,6 +48,18 @@ class HomeViewModel extends ChangeNotifier {
     super.dispose();
   }
 
+  Future<void> _init() async {
+    _subPlaying = _resourceRepo.player.playingStream.listen((event) {
+      if (event) {
+        // update selected resource id whenver the player
+        // was started or stopped
+        _selectedResourceId = _resourceRepo.currentResourceId;
+        _logger.fine('event:$event - $_selectedResourceId');
+        notifyListeners();
+      }
+    });
+  }
+
   Future<void> load() async {
     // _logger.fine('_load');
     _running = true;
@@ -68,16 +80,6 @@ class HomeViewModel extends ChangeNotifier {
       _servers.clear();
       _servers.addAll(await _resourceRepo.getServers());
       // _logger.fine('servers:$_server');
-
-      _subPlaying = _resourceRepo.player.playingStream.listen((event) {
-        if (event) {
-          // update selected resource id whenver the player
-          // was started or stopped
-          _selectedResourceId = _resourceRepo.currentResourceId;
-          _logger.fine('event:$event - $_selectedResourceId');
-          notifyListeners();
-        }
-      });
     } on Exception catch (e) {
       _logger.severe(e.toString());
       _error = e.toString();

@@ -15,7 +15,9 @@ class ResourceViewModel extends ChangeNotifier {
     required ResourceRepository resourceRepo,
     required ResourceDownloader resourceDnr,
   }) : _resourceRepo = resourceRepo,
-       _resourceDnr = resourceDnr;
+       _resourceDnr = resourceDnr {
+    _init();
+  }
 
   final ResourceRepository _resourceRepo;
   final ResourceDownloader _resourceDnr;
@@ -45,6 +47,24 @@ class ResourceViewModel extends ChangeNotifier {
   int? get currentItemIndex => _currentItemIndex;
   int? get bookmarkItemIndex => _bookmarkItemIndex;
 
+  Future<void> _init() async {
+    // subscribe to the currentIndex
+    _subCurrIdx = _resourceRepo.player.currentIndexStream.listen((event) async {
+      // change of currentIndex => update currentItemIndex
+      await _updateCurrentItemIndex();
+    });
+    // subscribe to the playing stream
+    _subPlaying = _resourceRepo.player.playingStream.listen((event) async {
+      if (event) {
+        // playing => update currentItemIndex
+        await _updateCurrentItemIndex();
+      } else {
+        // paused => update bookmarkItemIndex
+        await _updateBookmarkItemIndex();
+      }
+    });
+  }
+
   Future<void> load(String? resourceId) async {
     _running = true;
     try {
@@ -68,24 +88,6 @@ class ResourceViewModel extends ChangeNotifier {
         );
         _error = '';
       }
-
-      // subscribe to the currentIndex
-      _subCurrIdx = _resourceRepo.player.currentIndexStream.listen((
-        event,
-      ) async {
-        // change of currentIndex => update currentItemIndex
-        await _updateCurrentItemIndex();
-      });
-      // subscribe to the playing stream
-      _subPlaying = _resourceRepo.player.playingStream.listen((event) async {
-        if (event) {
-          // playing => update currentItemIndex
-          await _updateCurrentItemIndex();
-        } else {
-          // paused => update bookmarkItemIndex
-          await _updateBookmarkItemIndex();
-        }
-      });
     } on Exception catch (e) {
       _error = e.toString();
     } finally {

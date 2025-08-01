@@ -31,7 +31,7 @@ List<SingleChildWidget> get providers {
         sts: context.read<StorageService>(),
         client: context.read<WebDavClient>(),
         oauth: context.read<OAuthService>(),
-      )..load(),
+      ),
     ),
     // resource downloader
     ChangeNotifierProvider(

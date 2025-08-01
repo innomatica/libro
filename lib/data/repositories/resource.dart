@@ -44,7 +44,9 @@ class ResourceRepository {
        _dbs = dbs,
        _sts = sts,
        _client = client,
-       _oauth = oauth;
+       _oauth = oauth {
+    _init();
+  }
 
   final WebScraper _scraper;
   final AudioPlayer _player;
@@ -70,7 +72,7 @@ class ResourceRepository {
       ? _player.sequence[_player.currentIndex!].tag.extras["resourceId"]
       : null;
 
-  Future load() async {
+  Future _init() async {
     // update bookmark when playing == false i.e., when
     // the player was explicitly paused
     _subPlaying = _player.playingStream.listen((event) async {
