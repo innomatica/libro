@@ -331,6 +331,7 @@ class ResourceRepository {
         // );
 
         for (final item in resource.items) {
+          if (item.type?.primaryType != 'audio') continue;
           if (item.uri.startsWith('file')) {
             // file source
             sources.add(
