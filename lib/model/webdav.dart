@@ -201,12 +201,12 @@ class WebDavServer {
 
   factory WebDavServer.fromSqlite(Map<String, Object?> data) {
     return WebDavServer(
-      id: data['id'] != null ? data['id'] as int : null,
+      id: data['id'] as int?,
       title: data['title'] as String,
       url: data['url'] as String,
       root: data['root'] as String,
       auth: WebDavAuth.fromMap(jsonDecode(data['auth'] as String)),
-      extra: data['extra'] != null ? jsonDecode(data['extra'] as String) : null,
+      extra: jsonDecode(data['extra'] as String? ?? "null"),
     );
   }
 

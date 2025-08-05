@@ -120,8 +120,8 @@ class Resource {
       bookmark: row['bookmark'] != null
           ? Bookmark.fromMap(jsonDecode(row['bookmark'] as String))
           : null,
-      serverId: row['server_id'] != null ? row['server_id'] as int : null,
-      extra: row['extra'] != null ? jsonDecode(row['extra'] as String) : null,
+      serverId: row['server_id'] as int?,
+      extra: jsonDecode(row['extra'] as String? ?? "null"),
       auth: row['auth'] != null
           ? WebDavAuth.fromMap(jsonDecode(row['auth'] as String))
           : null,
@@ -139,9 +139,9 @@ class Resource {
     'keywords': keywords,
     'media_types': jsonEncode(mediaTypes.map((e) => e.toString()).toList()),
     'items': jsonEncode(items.map((e) => e.toMap()).toList()),
-    'bookmark': bookmark != null ? jsonEncode(bookmark!.toMap()) : null,
+    'bookmark': jsonEncode(bookmark?.toMap()),
     'server_id': serverId,
-    'extra': extra != null ? jsonEncode(extra) : null,
+    'extra': jsonEncode(extra),
     // auth is a db field
   };
 
