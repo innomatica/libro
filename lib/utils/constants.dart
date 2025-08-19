@@ -4,6 +4,7 @@ const appVersion = "1.0.0+1-pre";
 
 const developerWebsite = 'https://innomatic.ca';
 const sourceRepository = 'https://github.com/innomatica/libro';
+const releaseUrl = 'https://github.com/innomatica/libro/releases';
 
 // book sites
 const librivoxUrl = "https://librivox.org";

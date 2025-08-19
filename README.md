@@ -18,7 +18,6 @@ and to reduce the mobile data usage.
 
 # Todos
 
-* better download progress indicator
 * refactor defaultThumbnailImage logic
 * when adding book download cover image too
 
