@@ -102,6 +102,9 @@ class Resource {
   });
 
   factory Resource.fromSqlite(Map<String, Object?> row) {
+    print(
+      'row:${row["bookmark"]}, ${row["bookmark"] == null}, ${row["bookmark"] == "null"}',
+    );
     return Resource(
       resourceId: row['resource_id'] as String,
       category: row['category'] as String,
@@ -139,15 +142,19 @@ class Resource {
     'keywords': keywords,
     'media_types': jsonEncode(mediaTypes.map((e) => e.toString()).toList()),
     'items': jsonEncode(items.map((e) => e.toMap()).toList()),
-    'bookmark': jsonEncode(bookmark?.toMap()),
+    'bookmark': bookmark != null ? jsonEncode(bookmark!.toMap()) : null,
     'server_id': serverId,
-    'extra': jsonEncode(extra),
+    'extra': extra != null ? jsonEncode(extra) : null,
     // auth is a db field
   };
 
   @override
   String toString() {
     // description is too long to show
-    return (toSqlite()..remove('description')).toString();
+    return (toSqlite()
+          ..remove('description')
+          ..remove('items')
+          ..remove('media_types'))
+        .toString();
   }
 }
