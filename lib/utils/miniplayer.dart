@@ -15,70 +15,71 @@ class MiniPlayer extends StatelessWidget {
       builder: (context, snapshot) {
         return snapshot.hasData && snapshot.data!.sequence.isNotEmpty
             ? Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // title
-                Expanded(
-                  child: TextButton(
-                    // onPressed: onPressed,
-                    onPressed: () {
-                      showModalBottomSheet(
-                        context: context,
-                        builder: (context) => ModalPlayer(),
-                      );
-                    },
-                    child: Text(
-                      snapshot.data!.currentSource?.tag.title ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.tertiary,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // title
+                  Expanded(
+                    child: TextButton(
+                      // onPressed: onPressed,
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (context) => ModalPlayer(),
+                        );
+                      },
+                      child: Text(
+                        snapshot.data!.currentSource?.tag.title ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.tertiary,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                // rewind 30 sec
-                IconButton(
-                  icon: Icon(Icons.replay_30_rounded),
-                  onPressed: () async {
-                    final newPos = player.position - Duration(seconds: 30);
-                    await player.seek(
-                      newPos <= Duration.zero ? Duration.zero : newPos,
-                    );
-                  },
-                ),
-                // play or pause
-                StreamBuilder(
-                  stream: player.playingStream,
-                  builder: (context, snapshot) {
-                    return snapshot.hasData
-                        ? IconButton(
-                          onPressed: () async {
-                            snapshot.data!
-                                ? await player.pause()
-                                : await player.play();
-                          },
-                          icon: Icon(
-                            snapshot.data!
-                                ? Icons.pause_rounded
-                                : Icons.play_arrow_rounded,
-                          ),
-                        )
-                        : SizedBox(width: 0);
-                  },
-                ),
-                // forward 30
-                IconButton(
-                  icon: Icon(Icons.forward_30_rounded),
-                  onPressed: () async {
-                    final newPos = player.position + Duration(seconds: 30);
-                    if (player.duration != null && newPos <= player.duration!) {
-                      await player.seek(newPos);
-                    }
-                  },
-                ),
-              ],
-            )
+                  // rewind 30 sec
+                  IconButton(
+                    icon: Icon(Icons.replay_30_rounded),
+                    onPressed: () async {
+                      final newPos = player.position - Duration(seconds: 30);
+                      await player.seek(
+                        newPos <= Duration.zero ? Duration.zero : newPos,
+                      );
+                    },
+                  ),
+                  // play or pause
+                  StreamBuilder(
+                    stream: player.playingStream,
+                    builder: (context, snapshot) {
+                      return snapshot.hasData
+                          ? IconButton(
+                              onPressed: () async {
+                                snapshot.data!
+                                    ? await player.pause()
+                                    : await player.play();
+                              },
+                              icon: Icon(
+                                snapshot.data!
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded,
+                              ),
+                            )
+                          : SizedBox(width: 0);
+                    },
+                  ),
+                  // forward 30
+                  IconButton(
+                    icon: Icon(Icons.forward_30_rounded),
+                    onPressed: () async {
+                      final newPos = player.position + Duration(seconds: 30);
+                      if (player.duration != null &&
+                          newPos <= player.duration!) {
+                        await player.seek(newPos);
+                      }
+                    },
+                  ),
+                ],
+              )
             : SizedBox(height: 0);
       },
     );
@@ -139,6 +140,58 @@ class ModalPlayer extends StatelessWidget {
           ),
           SizedBox(height: 8),
           // first row: speed, position, volume
+          StatefulBuilder(
+            builder: (context, setState) {
+              return StreamBuilder(
+                stream: ignoreStream ? null : player.positionStream,
+                builder: (context, asyncSnapshot) {
+                  return Column(
+                    children: [
+                      // position slider
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0,
+                          vertical: 8.0,
+                        ),
+                        child: Slider(
+                          value: ignoreStream
+                              ? playerPos
+                              : player.position.inSeconds.toDouble(),
+                          min: 0.0,
+                          max: player.duration?.inSeconds.toDouble() ?? 100.0,
+                          padding: EdgeInsets.only(
+                            top: 16,
+                            left: 16,
+                            right: 16,
+                          ),
+                          onChangeStart: (value) {
+                            setState(() => ignoreStream = true);
+                          },
+                          onChanged: (value) {
+                            setState(() => playerPos = value);
+                          },
+                          onChangeEnd: (value) async {
+                            setState(() => ignoreStream = false);
+                            await player.seek(Duration(seconds: value.toInt()));
+                          },
+                          label: secsToHhMmSs(playerPos.floor()),
+                          divisions: 100,
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(secsToHhMmSs(player.position.inSeconds)),
+                          Text(secsToHhMmSs(player.duration?.inSeconds)),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+          /*
           StreamBuilder<Duration>(
             stream: player.positionStream,
             builder: (context, snapshot) {
@@ -178,6 +231,7 @@ class ModalPlayer extends StatelessWidget {
               );
             },
           ),
+          */
           // second row: begin, rewind, play, forward, end
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
