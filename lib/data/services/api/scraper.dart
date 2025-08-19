@@ -109,8 +109,10 @@ class WebScraper {
           document.querySelector('h1.item-title ~ dl  a')?.text.trim() ??
           'Unknown';
       // keywords
-      final keywords =
-          document.querySelector('dd[itemprop="keywords"]')?.text.trim();
+      final keywords = document
+          .querySelector('dd[itemprop="keywords"]')
+          ?.text
+          .trim();
       // description
       final description =
           document.querySelector('#descript')?.text.trim() ??
@@ -124,10 +126,10 @@ class WebScraper {
               .split('?')
               .first;
       // mediaTypes
-      List<ContentType> mediaTypes = [];
+      Set<ContentType> mediaTypeSet = {};
       for (final item in items) {
-        if (item.type != null && !mediaTypes.contains(item.type!)) {
-          mediaTypes.add(item.type!);
+        if (item.type != null) {
+          mediaTypeSet.add(item.type!);
         }
       }
       if (items.isNotEmpty) {
@@ -140,7 +142,7 @@ class WebScraper {
           description: description,
           thumbnail: thumbnail,
           keywords: keywords,
-          mediaTypes: mediaTypes,
+          mediaTypes: mediaTypeSet.toList(),
           items: items,
           extra: {'source': 'Internet Archive', 'url': url},
         );
@@ -159,19 +161,17 @@ class WebScraper {
       final bookPage = document.querySelector('.page.book-page');
       if (bookPage != null) {
         // album image
-        final imageUrl =
-            bookPage
-                .querySelector('.book-page-book-cover img')
-                ?.attributes['src'];
+        final imageUrl = bookPage
+            .querySelector('.book-page-book-cover img')
+            ?.attributes['src'];
         // title
         final title = bookPage.querySelector('h1')?.text ?? 'Unknown Title';
         // authors
-        final author =
-            bookPage
-                .querySelector('.book-page-author a')
-                ?.text
-                .split('(')[0] // remove DOB,DOD
-                .trim();
+        final author = bookPage
+            .querySelector('.book-page-author a')
+            ?.text
+            .split('(')[0] // remove DOB,DOD
+            .trim();
         // description
         final description = bookPage.querySelector('.description')?.text.trim();
         // genre and lanugage
@@ -183,7 +183,7 @@ class WebScraper {
           final inner = elem.innerHtml;
           if (inner.contains('Language')) {
             language = inner.split('</span>')[1].trim().toLowerCase();
-          } else {
+          } else if (inner.contains('Genre')) {
             genre = inner.split('</span>')[1].trim().toLowerCase();
           }
         }
@@ -269,10 +269,10 @@ class WebScraper {
         }
 
         // mediaTypes
-        List<ContentType> mediaTypes = [];
+        Set<ContentType> mediaTypeSet = {};
         for (final item in items) {
-          if (item.type != null && !mediaTypes.contains(item.type!)) {
-            mediaTypes.add(item.type!);
+          if (item.type != null) {
+            mediaTypeSet.add(item.type!);
           }
         }
         if (items.isNotEmpty) {
@@ -286,7 +286,7 @@ class WebScraper {
             thumbnail: imageUrl?.trim(),
             keywords: '$genre,$author',
             items: items,
-            mediaTypes: mediaTypes,
+            mediaTypes: mediaTypeSet.toList(),
             extra: {
               'num_sections': items.length,
               'bookId': librivoxId,
@@ -313,11 +313,13 @@ class WebScraper {
         author = author.split('(')[0].trim();
       }
       // NOTE: this is a fragile operation
-      final description =
-          document.querySelectorAll('.entry-content p')[2].innerHtml;
+      final description = document
+          .querySelectorAll('.entry-content p')[2]
+          .innerHtml;
       // image url
-      String? imageUrl =
-          document.querySelector('.entry-content img')?.attributes['src'];
+      String? imageUrl = document
+          .querySelector('.entry-content img')
+          ?.attributes['src'];
       if (imageUrl != null && !imageUrl.startsWith('http')) {
         imageUrl = 'https://legamus.eu${imageUrl.trim()}';
       }
@@ -326,10 +328,9 @@ class WebScraper {
       final items = <ResourceItem>[];
 
       // audio page url
-      final audioUrl =
-          document
-              .querySelector('li a[href*="listen.legamus.eu"]')
-              ?.attributes['href'];
+      final audioUrl = document
+          .querySelector('li a[href*="listen.legamus.eu"]')
+          ?.attributes['href'];
       if (audioUrl != null) {
         final res = await http.get(Uri.parse(audioUrl));
         if (res.statusCode == 200) {
