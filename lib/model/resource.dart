@@ -102,9 +102,6 @@ class Resource {
   });
 
   factory Resource.fromSqlite(Map<String, Object?> row) {
-    print(
-      'row:${row["bookmark"]}, ${row["bookmark"] == null}, ${row["bookmark"] == "null"}',
-    );
     return Resource(
       resourceId: row['resource_id'] as String,
       category: row['category'] as String,
