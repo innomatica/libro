@@ -73,6 +73,9 @@ class ResourceRepository {
       : null;
   int get sequenceLength => _player.sequence.length;
 
+  int getSequenceIndex(int itemIndex) =>
+      _player.sequence.indexWhere((e) => e.tag.extras["index"] == itemIndex);
+
   Future _init() async {
     // update bookmark when playing == false i.e., when
     // the player was explicitly paused
@@ -294,6 +297,14 @@ class ResourceRepository {
     }
   }
 
+  Future<void> _clearBookmark(String resourceId) async {
+    _logger.fine('clearBookmark:$resourceId');
+    final bookmark = Bookmark(index: 0, position: 0);
+    final bmdata = {'bookmark': jsonEncode(bookmark.toMap())};
+    await updateResource(resourceId, bmdata);
+  }
+
+  // NOTE: index is NOT the index of sequence but index of item
   Future<void> playAudio(String resourceId, {int? index}) async {
     _logger.fine(
       'requestedResourceId: $resourceId\n'
@@ -321,15 +332,12 @@ class ResourceRepository {
           await _player.play();
         }
       } else {
-        // new item
-        // check if player has the item in the sequence
-        final idx = _player.sequence.indexWhere(
-          (e) => e.tag.extras['index'] == index,
-        );
-        if (idx > -1) {
-          // we have item in the sequence
-          _logger.fine('seek to index: $idx');
-          await _player.seek(Duration(seconds: 0), index: idx);
+        // new item selected by item index
+        final seqIdx = getSequenceIndex(index);
+        if (seqIdx >= 0) {
+          // found the item in the sequence
+          _logger.fine('seek to  $seqIdx');
+          await _player.seek(Duration(seconds: 0), index: seqIdx);
         } else {
           throw Exception('item not found');
         }
@@ -350,17 +358,25 @@ class ResourceRepository {
         if (resource == null) throw Exception('Resource not found');
         final sources = await _getAudioSource(resource);
         _logger.fine('sources:${sources[0]} length:${sources.length}');
-        // apply bookmark if index was not given
-        final idx = index ?? resource.bookmark?.index ?? 0;
-        final pos = idx == resource.bookmark?.index
-            ? resource.bookmark?.position ?? 0
-            : 0;
-        _logger.fine('idx:$idx, pos:$pos');
-        await _player.setAudioSources(
-          sources,
-          initialIndex: idx,
-          initialPosition: Duration(seconds: pos),
-        );
+        await _player.setAudioSources(sources);
+        if (index != null) {
+          final seqIdx = getSequenceIndex(index);
+          if (seqIdx >= 0) {
+            // found the item in the sequence
+            _logger.fine('seek to  $seqIdx');
+            await _player.seek(Duration.zero, index: seqIdx);
+          }
+        } else if (resource.bookmark != null) {
+          final seqIdx = getSequenceIndex(resource.bookmark!.index);
+          if (seqIdx >= 0) {
+            await _player.seek(
+              Duration(seconds: resource.bookmark!.position),
+              index: seqIdx,
+            );
+          } else {
+            await _clearBookmark(resource.resourceId);
+          }
+        }
         await _player.play();
         return;
       } on Exception catch (e) {
@@ -373,18 +389,17 @@ class ResourceRepository {
   Future<List<IndexedAudioSource>> _getAudioSource(Resource resource) async {
     final sources = <IndexedAudioSource>[];
     // get auth header first
-    final authHeader = await _getAuthHeaders(
-      resource.auth,
-      resource.serverId,
-      forceRefresh: true,
-    );
+    Map<String, String>? authHeader;
+
     for (final item in resource.items) {
       _logger.fine('item:$item');
       // skip non audio files
       if (item.type?.primaryType != 'audio') continue;
       if (item.uri.startsWith('file')) {
         // file source
-        // _logger.fine('adding file source: ${item.index}');
+        _logger.fine(
+          'adding file source: ${item.index} ${item.title} ${item.type}',
+        );
         sources.add(
           AudioSource.file(
             // file.path,
@@ -403,7 +418,16 @@ class ResourceRepository {
         );
       } else {
         // network source
-        // _logger.fine('adding network source: ${item.index}');
+        _logger.fine(
+          'adding network source: ${item.index} ${item.title} ${item.type}',
+        );
+        authHeader =
+            authHeader ??
+            await _getAuthHeaders(
+              resource.auth,
+              resource.serverId,
+              forceRefresh: true,
+            );
         sources.add(
           AudioSource.uri(
             Uri.parse(item.uri),
