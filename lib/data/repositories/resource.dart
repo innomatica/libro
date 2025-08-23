@@ -370,10 +370,7 @@ class ResourceRepository {
     }
   }
 
-  Future<List<IndexedAudioSource>> _getAudioSource(
-    Resource resource, {
-    int? index,
-  }) async {
+  Future<List<IndexedAudioSource>> _getAudioSource(Resource resource) async {
     final sources = <IndexedAudioSource>[];
     // get auth header first
     final authHeader = await _getAuthHeaders(

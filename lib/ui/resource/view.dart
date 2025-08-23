@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:go_router/go_router.dart';
-import 'package:logging/logging.dart';
 
 import '../../model/resource.dart';
 import '../../utils/helpers.dart';
