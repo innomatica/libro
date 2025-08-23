@@ -1,6 +1,6 @@
 // app info
 const appName = "Libro";
-const appVersion = "1.0.2+3";
+const appVersion = "1.0.3+4";
 
 const developerWebsite = 'https://innomatic.ca';
 const sourceRepository = 'https://github.com/innomatica/libro';
