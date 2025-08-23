@@ -132,6 +132,7 @@ class ResourceViewModel extends ChangeNotifier {
   }
 
   Future playItem(ResourceItem item) async {
+    _logger.fine('item:$item');
     try {
       if (_resource != null) {
         if (item.type?.primaryType == 'audio') {

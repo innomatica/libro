@@ -9,11 +9,9 @@ import '../../utils/miniplayer.dart';
 import 'model.dart';
 
 class ResourceView extends StatelessWidget {
-  ResourceView({super.key, required this.model});
+  const ResourceView({super.key, required this.model});
 
   final ResourceViewModel model;
-  // ignore: unused_field
-  final _logger = Logger('ResourceView');
 
   Widget _buildDownloadButton() {
     return ListenableBuilder(
@@ -147,7 +145,7 @@ class ResourceView extends StatelessWidget {
   }
 
   void _playContent(ResourceItem item, BuildContext context) async {
-    // _logger.fine("item:$item");
+    print("item:$item");
     if (item.type?.primaryType == 'audio') {
       model.playItem(item);
     } else {

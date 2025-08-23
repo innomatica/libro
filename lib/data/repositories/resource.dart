@@ -71,6 +71,7 @@ class ResourceRepository {
   String? get currentResourceId => _player.currentIndex != null
       ? _player.sequence[_player.currentIndex!].tag.extras["resourceId"]
       : null;
+  int get sequenceLength => _player.sequence.length;
 
   Future _init() async {
     // update bookmark when playing == false i.e., when
@@ -294,9 +295,24 @@ class ResourceRepository {
   }
 
   Future<void> playAudio(String resourceId, {int? index}) async {
+    _logger.fine(
+      'requestedResourceId: $resourceId\n'
+      ' - requestedItemIndex: $index\n'
+      ' - currentResourceId: $currentResourceId\n'
+      ' - currentItemIndex: $currentItemIndex\n'
+      ' - sequenceLength: $sequenceLength',
+    );
+    // get resource
+    final resource = await readResource(resourceId);
+    if (resource == null) {
+      await _player.stop();
+      return;
+    }
+
     if (resourceId == currentResourceId) {
-      // same resource
-      if (index == currentItemIndex || index == null) {
+      // current resource
+      if (index == null || index == currentItemIndex) {
+        // current item -> toggle pause and play
         if (_player.playing) {
           _logger.fine('pause');
           await _player.pause();
@@ -305,91 +321,41 @@ class ResourceRepository {
           await _player.play();
         }
       } else {
-        _logger.fine('seek');
-        await _player.seek(Duration(seconds: 0), index: index);
+        // new item
+        // check if player has the item in the sequence
+        final idx = _player.sequence.indexWhere(
+          (e) => e.tag.extras['index'] == index,
+        );
+        if (idx > -1) {
+          // we have item in the sequence
+          _logger.fine('seek to index: $idx');
+          await _player.seek(Duration(seconds: 0), index: idx);
+        } else {
+          throw Exception('item not found');
+        }
         await _player.play();
       }
       return;
     } else {
       // new resource
-      _logger.fine('change source');
+      _logger.fine('new source');
       // clear existing sequence
       await _player.stop();
       try {
         // read the new resource
         final resource = await readResource(resourceId);
-        // FIXME: raise exception or something
-        if (resource == null) return;
-        // int initialIndex = 0;
-        final sources = <IndexedAudioSource>[];
-
-        // int sourceIdx = 0;
-        // final headers = await _getAuthHeaders(
-        //   resource.auth,
-        //   resource.serverId,
-        //   forceRefresh: true,
-        // );
-
-        for (final item in resource.items) {
-          if (item.type?.primaryType != 'audio') continue;
-          if (item.uri.startsWith('file')) {
-            // file source
-            sources.add(
-              AudioSource.file(
-                // file.path,
-                Uri.decodeFull(item.uri).split('file://').last,
-                tag: MediaItem(
-                  id: '${resource.resourceId}-${item.title}',
-                  album: resource.title,
-                  title: item.title,
-                  artUri: await _sts.getUri(
-                    resourceId,
-                    resource.thumbnail!.split('/').last,
-                  ),
-                  extras: {
-                    'resourceId': resource.resourceId,
-                    'index': item.index,
-                  },
-                ),
-              ),
-            );
-          } else {
-            // network source
-            sources.add(
-              AudioSource.uri(
-                Uri.parse(item.uri),
-                tag: MediaItem(
-                  id: '${resource.resourceId}-${item.index}',
-                  album: resource.title,
-                  title: item.title,
-                  artUri: await _sts.getUri(
-                    resourceId,
-                    resource.thumbnail!.split('/').last,
-                  ),
-                  extras: {
-                    'resourceId': resource.resourceId,
-                    'index': item.index,
-                  },
-                ),
-                headers: await _getAuthHeaders(
-                  resource.auth,
-                  resource.serverId,
-                  forceRefresh: true,
-                ),
-              ),
-            );
-            // in case of network audio with limited token life span, play
-            // only one item to avoid potential error from expired token
-            if (resource.auth?.method == AuthMethod.nubis) break;
-          }
-        }
-        // _logger.fine('sources:$sources');
-
+        _logger.fine(
+          'resource.items:${resource?.items} ${resource?.items.length}',
+        );
+        if (resource == null) throw Exception('Resource not found');
+        final sources = await _getAudioSource(resource);
+        _logger.fine('sources:${sources[0]} length:${sources.length}');
         // apply bookmark if index was not given
         final idx = index ?? resource.bookmark?.index ?? 0;
         final pos = idx == resource.bookmark?.index
             ? resource.bookmark?.position ?? 0
             : 0;
+        _logger.fine('idx:$idx, pos:$pos');
         await _player.setAudioSources(
           sources,
           initialIndex: idx,
@@ -402,6 +368,67 @@ class ResourceRepository {
         rethrow;
       }
     }
+  }
+
+  Future<List<IndexedAudioSource>> _getAudioSource(
+    Resource resource, {
+    int? index,
+  }) async {
+    final sources = <IndexedAudioSource>[];
+    // get auth header first
+    final authHeader = await _getAuthHeaders(
+      resource.auth,
+      resource.serverId,
+      forceRefresh: true,
+    );
+    for (final item in resource.items) {
+      _logger.fine('item:$item');
+      // skip non audio files
+      if (item.type?.primaryType != 'audio') continue;
+      if (item.uri.startsWith('file')) {
+        // file source
+        // _logger.fine('adding file source: ${item.index}');
+        sources.add(
+          AudioSource.file(
+            // file.path,
+            Uri.decodeFull(item.uri).split('file://').last,
+            tag: MediaItem(
+              id: '${resource.resourceId}-${item.title}',
+              album: resource.title,
+              title: item.title,
+              artUri: await _sts.getUri(
+                resource.resourceId,
+                resource.thumbnail!.split('/').last,
+              ),
+              extras: {'resourceId': resource.resourceId, 'index': item.index},
+            ),
+          ),
+        );
+      } else {
+        // network source
+        // _logger.fine('adding network source: ${item.index}');
+        sources.add(
+          AudioSource.uri(
+            Uri.parse(item.uri),
+            tag: MediaItem(
+              id: '${resource.resourceId}-${item.index}',
+              album: resource.title,
+              title: item.title,
+              artUri: await _sts.getUri(
+                resource.resourceId,
+                resource.thumbnail!.split('/').last,
+              ),
+              extras: {'resourceId': resource.resourceId, 'index': item.index},
+            ),
+            headers: authHeader,
+          ),
+        );
+        // in case of network audio with limited token life span, play
+        // only one item to avoid potential error from expired token
+        // if (resource.auth?.method == AuthMethod.nubis) break;
+      }
+    }
+    return sources;
   }
 
   Future<Map<String, String>?> _getAuthHeaders(
